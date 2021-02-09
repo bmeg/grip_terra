@@ -187,13 +187,14 @@ class TerraServicer(gripper_pb2_grpc.GRIPSourceServicer):
             namespace, name, type = tmp
             e = self.terra.get_entity(namespace, name, type)
             o = gripper_pb2.CollectionInfo()
-            o.search_fields.extend( e.attributeNames )
+            for a in e.attributeNames:
+                o.search_fields.extend( "$." + a )
             return o
         if len(tmp) == 4:
             namespace, name, etype, field = tmp
             dst = self.edges.get_dst(namespace, name, etype, field)
             o = gripper_pb2.CollectionInfo()
-            o.search_fields.extend( [type, dst] )
+            o.search_fields.extend( ["$." + etype, "$." + dst] )
             return o
 
     def GetIDs(self, request, context):
