@@ -9,8 +9,10 @@ pip install pyyaml grpcio-tools pyAnVIL
 This only collects info on entities in the annvil-datastorage namespace and stores
 the information in the `config.yaml` file.
 ```
-./grip_terra.py scan -n anvil-datastorage
+./grip_terra.py scan --edge -n anvil-datastorage
 ```
+`-n` - limits scan to anvil-datastorage namespace
+`--edge` - scans data to look for reference and determine edges
 
 ## Launch the server
 ```
