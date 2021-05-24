@@ -43,3 +43,22 @@ grip er get anvil-datastorage/anvil_nhgri_broad_ibd_daly_turner_wes/participant 
 ```
 grip er query anvil-datastorage/anvil_nhgri_broad_ibd_daly_turner_wes/participant gender Male
 ```
+
+## Build graph model for GRIP
+```
+./build_graph_model.py config.yaml > graph_model.yaml
+```
+
+## Create config for GRIP
+grip-config.yaml
+```
+Server:
+  RequestLogging:
+    Enable: true
+
+Drivers:
+  terra-driver:
+    Gripper:
+      ConfigFile: ./graph_model.yaml
+      Graph: terra
+```
