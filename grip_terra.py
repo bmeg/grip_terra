@@ -107,7 +107,6 @@ class TerraClient:
         if e:
             return e.get_row(key)
 
-<<<<<<< HEAD
 class EdgeTable:
     def __init__(self, namespace, name, etype, field):
         self.namespace = namespace
@@ -129,8 +128,6 @@ class EdgeTable:
                 rname = "%s/%s" % (r['name'], v['entityName'])
                 self.data[rname] = {"from":r['name'], "to":v['entityName']}
 
-=======
->>>>>>> e7ba4a2c80c3a6b9d71141c86659741dda079801
 class EdgeTableClient:
     def __init__(self, terra, edge_config):
         self.terra = terra
@@ -144,7 +141,6 @@ class EdgeTableClient:
                     for field in self.edge_config[namespace][name][etype]:
                         yield namespace, name, etype, field
 
-<<<<<<< HEAD
     def _tname(self, namespace, name, etype, field):
         return "%s/%s/%s/%s" % (namespace, name, etype, field)
 
@@ -160,51 +156,6 @@ class EdgeTableClient:
         tname = self._tname(namespace, name, etype, field)
         for r in self.tables[tname].data.values():
             yield r
-=======
-    def _cache(self, namespace, name, etype, field):
-        tname = "%s/%s/%s/%s" % (namespace, name, etype, field)
-        if tname not in self.tables:
-            t = {}
-            for row in self.terra.get_entity_rows(namespace, name, etype):
-                v = row['attributes'][field]
-                if 'itemsType' in v:
-                    for n, i in enumerate(v['items']):
-                        dst = i['entityName']
-                        id = "%s/%d/%s" % (row['name'], n, dst)
-                        rec = {
-                            "name" : id,
-                            "attributes": {
-                                etype: row['name'],
-                                i['entityType'] : dst
-                            }
-                        }
-                        t[id] = rec
-                if 'entityType' in v:
-                    dst = v['entityName']
-                    id = "%s/%s" % (row['name'], dst)
-                    rec = {
-                        "name" : id,
-                        "attributes": {
-                            etype: row['name'],
-                            v['entityType'] : dst
-                        }
-                    }
-                    t[id] = rec
-            self.tables[tname] = t
-        return self.tables[tname]
-
-    def get_dst(self, namespace, name, type, field):
-        return self.edge_config.get(namespace, {}).get(name, {}).get(type, {}).get(field, None)
-
-    def get_edge_rows(self, namespace, name, etype, field):
-        for row in self._cache(namespace, name, etype, field).values():
-            yield row
-            
-    def get_edge_row(self, namespace, name, etype, field, key):
-        d = self._cache(namespace, name, etype, field)
-        return d[key]
-
->>>>>>> e7ba4a2c80c3a6b9d71141c86659741dda079801
 
 class TerraServicer(gripper_pb2_grpc.GRIPSourceServicer):
     def __init__(self, terra, edge_config):
@@ -228,39 +179,20 @@ class TerraServicer(gripper_pb2_grpc.GRIPSourceServicer):
             namespace, name, type = tmp
             e = self.terra.get_entity(namespace, name, type)
             o = gripper_pb2.CollectionInfo()
-<<<<<<< HEAD
             o.search_fields.extend( e.attributeNames )
             return o
         if len(tmp) == 4:
             namespace, name, type, field = tmp
             o = gripper_pb2.CollectionInfo()
             o.search_fields.extend( ["$.to", "$.from"] )
-=======
-            for a in e.attributeNames:
-                o.search_fields.extend( "$." + a )
-            return o
-        if len(tmp) == 4:
-            namespace, name, etype, field = tmp
-            dst = self.edges.get_dst(namespace, name, etype, field)
-            o = gripper_pb2.CollectionInfo()
-            o.search_fields.extend( ["$." + etype, "$." + dst] )
->>>>>>> e7ba4a2c80c3a6b9d71141c86659741dda079801
             return o
 
     def GetIDs(self, request, context):
-        tmp = request.name.split("/")
-        if len(tmp) == 3:
-            namespace, name, etype = tmp
-            for row in self.terra.get_entity_rows(namespace, name, etype):
-                o = gripper_pb2.RowID()
-                o.id = row['name']
-                yield o
-        if len(tmp) == 4:
-            namespace, name, etype, field = tmp
-            for row in self.edges.get_edge_rows(namespace, name, etype, field):
-                o = gripper_pb2.RowID()
-                o.id = row['name']
-                yield o
+        namespace, name, etype = request.name.split("/")
+        for row in self.terra.get_entity_rows(namespace, name, etype):
+            o = gripper_pb2.RowID()
+            o.id = row['name']
+            yield o
 
     def GetRows(self, request, context):
         tmp = request.name.split("/")
@@ -275,13 +207,8 @@ class TerraServicer(gripper_pb2_grpc.GRIPSourceServicer):
             namespace, name, etype, field = tmp
             for row in self.edges.get_edge_rows(namespace, name, etype, field):
                 o = gripper_pb2.Row()
-<<<<<<< HEAD
                 o.id = "%s/%s" % (row['from'], row["to"])
                 json_format.ParseDict(row, o.data)
-=======
-                o.id = row['name']
-                json_format.ParseDict(row['attributes'], o.data)
->>>>>>> e7ba4a2c80c3a6b9d71141c86659741dda079801
                 yield o
 
     def GetRowsByID(self, request_iterator, context):
@@ -290,7 +217,6 @@ class TerraServicer(gripper_pb2_grpc.GRIPSourceServicer):
             if len(tmp) == 3:
                 namespace, name, etype = tmp
                 ent = self.terra.get_entity_row(namespace, name, etype, req.id)
-<<<<<<< HEAD
                 o = gripper_pb2.Row()
                 o.id = req.id
                 o.requestID = req.requestID
@@ -306,38 +232,15 @@ class TerraServicer(gripper_pb2_grpc.GRIPSourceServicer):
 
     def GetRowsByField(self, req, context):
         qField = re.sub( r'^\$\.', '', req.field) # should be doing full json path, but this will work for now
-=======
-                o = gripper_pb2.Row()
-                o.id = req.id
-                o.requestID = req.requestID
-                json_format.ParseDict(ent['attributes'], o.data)
-                yield o
-            if len(tmp) == 4:
-                namespace, name, etype, field = tmp
-                ent = self.edges.get_edge_row(namespace, name, etype, field, req.id)
-                o = gripper_pb2.Row()
-                o.id = req.id
-                o.requestID = req.requestID
-                json_format.ParseDict(ent['attributes'], o.data)
-                yield o
-
-    def GetRowsByField(self, req, context):
-        field = re.sub( r'^\$\.', '', req.field) # should be doing full json path, but this will work for now
->>>>>>> e7ba4a2c80c3a6b9d71141c86659741dda079801
         tmp = req.collection.split("/")
         if len(tmp) == 3:
             namespace, name, etype = tmp
             for row in self.terra.get_entity_rows(namespace, name, etype):
-<<<<<<< HEAD
                 if row["attributes"].get(qField, None) == req.value:
-=======
-                if row["attributes"].get(field, None) == req.value:
->>>>>>> e7ba4a2c80c3a6b9d71141c86659741dda079801
                     o = gripper_pb2.Row()
                     o.id = row["name"]
                     json_format.ParseDict(row["attributes"], o.data)
                     yield o
-<<<<<<< HEAD
         elif len(tmp) == 4:
             namespace, name, etype, field = tmp
             for row in self.edges.get_edge_rows(namespace, name, etype, field):
@@ -347,17 +250,6 @@ class TerraServicer(gripper_pb2_grpc.GRIPSourceServicer):
                     json_format.ParseDict(row, o.data)
                     yield o
 
-=======
-        if len(tmp) == 4:
-            namespace, name, etype, efield = tmp
-            for row in self.edges.get_edge_rows(namespace, name, etype, efield):
-                if row["attributes"].get(field, None) == req.value:
-                    o = gripper_pb2.Row()
-                    o.id = row["name"]
-                    json_format.ParseDict(row["attributes"], o.data)
-                    yield o
-                    
->>>>>>> e7ba4a2c80c3a6b9d71141c86659741dda079801
 
 def server(config, args):
     terra = TerraClient()
@@ -394,11 +286,7 @@ def scan(config, args):
             for row in terra.get_entity_rows(namespace, name, etype):
                 for k, v in row['attributes'].items():
                     if isinstance(v, dict):
-<<<<<<< HEAD
                         if 'itemsType' in v and v["itemsType"] == "EntityReference":
-=======
-                        if 'itemsType' in v:
->>>>>>> e7ba4a2c80c3a6b9d71141c86659741dda079801
                             for i in v['items']:
                                 ecols[k] = i['entityType']
                         if 'entityType' in v:
